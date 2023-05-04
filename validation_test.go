@@ -2,12 +2,14 @@ package golangvalidation
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
 )
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 func TestValidation(t *testing.T) {
 	validkah := validator.New()
 	if validkah == nil {
@@ -15,7 +17,8 @@ func TestValidation(t *testing.T) {
 	}
 }
 
-// /////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 func TestValidationField(t *testing.T) {
 	validkah2 := validator.New()
 
@@ -34,7 +37,8 @@ func TestValidationField(t *testing.T) {
 
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 func TestValidasiDuaVariabel(t *testing.T) {
 	validkah3 := validator.New()
 
@@ -49,7 +53,8 @@ func TestValidasiDuaVariabel(t *testing.T) {
 
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 func TestValidasiMultiTag(t *testing.T) {
 	validkah4 := validator.New()
 
@@ -63,7 +68,8 @@ func TestValidasiMultiTag(t *testing.T) {
 	}
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 func TestValidasiDenganTagParameter(t *testing.T) {
 	validkah5 := validator.New()
 
@@ -77,7 +83,8 @@ func TestValidasiDenganTagParameter(t *testing.T) {
 	}
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 type LoginRequest struct {
 	Username string `validate:"required,email"`
 	Password string `validate:"required,min=5"`
@@ -100,7 +107,8 @@ func TestValidasiTagParameterStruct(t *testing.T) {
 	}
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 func TestValidasiError(t *testing.T) {
 
 	validkah6data := validator.New()
@@ -122,7 +130,8 @@ func TestValidasiError(t *testing.T) {
 	}
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 type RegUser struct {
 	Username        string `validate:"required,email"`
 	Password        string `validate:"required,min=5"`
@@ -147,7 +156,8 @@ func TestValidasiCrossField(t *testing.T) {
 	}
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 type DataDiri struct {
 	Nama     string   `validate:"required,max=50"`
 	Umur     int      `validate:"required,max=3"`
@@ -292,49 +302,199 @@ func TestValidasiBasicCollection(t *testing.T) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SchoolData struct {
-	Nama string `validate:"required"`
+type DataPengguna struct {
+	Id           string                 `validate:"required"`
+	NamaPengguna string                 `validate:"required"`
+	Alamat       []DataAlamat           `validate:"required,dive"`
+	Hobi         []string               `validate:"required,dive,required,min=3"`
+	Sekolah      map[string]DataSekolah `validate:"required,dive,keys,required,min=2,endkeys,dive"`
 }
 
-type User struct {
-	Id       string                `validate:"required"`
-	NamaUser string                `validate:"required"`
-	Address  []Address             `validate:"required,dive"`
-	Hobbies  []string              `validate:"required,required,min=1"`
-	Schools  map[string]SchoolData `validate:"required,dive,keys,required,min=2,endkeys,dive"`
+type DataAlamat struct {
+	Kota   string `validate:"required"`
+	Negara string `validate:"required"`
+}
+
+type DataSekolah struct {
+	NamaSekolah string `validate:"required"`
 }
 
 func TestValidasiMap(t *testing.T) {
 
 	validkah6data := validator.New()
-	Request := DataDiri3{
-		Nama:   "",
-		Umur:   0,
-		Alamat: "",
-		Email:  "",
-		DataUsers: []DataUser{
+	ContohInputan := DataPengguna{
+		Id:           "",
+		NamaPengguna: "",
+		Alamat: []DataAlamat{
 			{
-				Username:   "",
-				Password:   "",
-				RePassword: "",
-			},
-			{
-				Username:   "",
-				Password:   "",
-				RePassword: "",
+				Kota:   "",
+				Negara: "",
 			},
 		},
-		Hobbies: []string{
-			"Gaming",
-			"Codings",
+		Hobi: []string{
 			"",
-			"X",
+			"",
+			"",
+		},
+		Sekolah: map[string]DataSekolah{
+			"SD": {
+				NamaSekolah: "",
+			},
+			"SMP": {
+				NamaSekolah: "",
+			},
+			"SMA": {
+				NamaSekolah: "",
+			},
+			"": {
+				NamaSekolah: "",
+			},
 		},
 	}
 
-	err := validkah6data.Struct(Request)
+	err := validkah6data.Struct(ContohInputan)
 	if err != nil {
 		fmt.Println(err.Error())
 
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+type DataPengguna2 struct {
+	Id           string                  `validate:"required"`
+	NamaPengguna string                  `validate:"required"`
+	Alamat       []DataAlamat2           `validate:"required,dive"`
+	Hobi         []string                `validate:"required,dive,required,min=3"`
+	Sekolah      map[string]DataSekolah2 `validate:"required,dive,keys,required,min=2,endkeys,dive"`
+	Wallet       map[string]int          `validate:"dive,keys,required,endkeys,required,gt=1000"`
+}
+
+type DataAlamat2 struct {
+	Kota   string `validate:"required"`
+	Negara string `validate:"required"`
+}
+
+type DataSekolah2 struct {
+	NamaSekolah string `validate:"required"`
+}
+
+func TestValidasiBasicMap(t *testing.T) {
+
+	validkah6data := validator.New()
+	ContohInputan := DataPengguna2{
+		Id:           "",
+		NamaPengguna: "",
+		Alamat: []DataAlamat2{
+			{
+				Kota:   "",
+				Negara: "",
+			},
+		},
+		Hobi: []string{
+			"",
+			"",
+			"",
+		},
+		Sekolah: map[string]DataSekolah2{
+			"SD": {
+				NamaSekolah: "",
+			},
+			"SMP": {
+				NamaSekolah: "",
+			},
+			"SMA": {
+				NamaSekolah: "",
+			},
+			"": {
+				NamaSekolah: "",
+			},
+		},
+		Wallet: map[string]int{
+			"BCA":  10000000,
+			"BCPT": 0,
+			"":     1000,
+		},
+	}
+
+	err := validkah6data.Struct(ContohInputan)
+	if err != nil {
+		fmt.Println(err.Error())
+
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+type LoginRequest2 struct {
+	Username string `validate:"custom1,min=5,email"`
+	Password string `validate:"custom1,min=5"`
+}
+
+func TestValidasiAliasTag(t *testing.T) {
+
+	validkah6data := validator.New()
+	validkah6data.RegisterAlias("custom1", "required,max=255")
+
+	var loginrequest1 LoginRequest2
+
+	// Required dan ini harus format email, karena sudah diset di atas
+	loginrequest1.Username = "sdasdasdwdsad"
+	loginrequest1.Password = ""
+
+	err := validkah6data.Struct(loginrequest1)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// misal ini membuat tag untuk memastikan username yang dibuat beneran
+// dengan menggunakan parameter validator.FieldlLevel, dengan return value nya boolean
+func MustValidUsername(field validator.FieldLevel) bool {
+
+	//field itu balikannya reflection value, jadi nanti Field ini isinya bakalan semua baik itu string atau int makannya pakai interface, dan hasilnya itu dikoknversi menjadi string
+	value, ok := field.Field().Interface().(string)
+	if ok {
+
+		//jika usernamenya tidak uppercase, direturn false
+		if value != strings.ToUpper(value) {
+			return false
+		}
+
+		//jika panjang tidak lebih dari 5 huruf, direturn false
+		if len(value) < 5 {
+			return false
+		}
+	}
+
+	//ini kalau kondisi memenuhi, misal buat username, itu panjangnya lebih dari 5 huruf
+	return true
+}
+
+//semua itu akan diproses di function testing di bawah
+
+type LoginRequest3 struct {
+	Username string `validate:"custom1,min=5,username"`
+	Password string `validate:"custom1,min=5"`
+}
+
+func TestValidasiCustom(t *testing.T) {
+
+	validkah6data := validator.New()
+	validkah6data.RegisterAlias("custom1", "required,max=255")
+	validkah6data.RegisterValidation("username", MustValidUsername)
+
+	var loginrequest1 LoginRequest3
+
+	// Required dan ini harus format username, karena sudah diset di atas
+	//dan ini merupakan custom tag
+	loginrequest1.Username = "DARTHSIDIOUS"
+	loginrequest1.Password = ""
+
+	err := validkah6data.Struct(loginrequest1)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 }
