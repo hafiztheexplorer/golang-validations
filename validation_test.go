@@ -2,6 +2,8 @@ package golangvalidation
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -497,4 +499,186 @@ func TestValidasiCustom(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+var regexNumber = regexp.MustCompile("^[0-9]+$")
+
+func MustValidPin(field validator.FieldLevel) bool {
+	length, err := strconv.Atoi(field.Param())
+	if err != nil {
+		panic(err.Error())
+	}
+
+	value := field.Field().String()
+	if !regexNumber.MatchString(value) {
+		return false
+	}
+
+	return len(value) == length
+}
+
+type LoginRequestNew struct {
+	Username string `validate:"custom1,email"`
+	Password string `validate:"custom1,min=5"`
+	Pin      string `validate:"required,Pincheck=6"`
+}
+
+func TestValidasiCustomParameter(t *testing.T) {
+
+	validkah6data := validator.New()
+	validkah6data.RegisterAlias("custom1", "required,max=255")
+	validkah6data.RegisterValidation("Pincheck", MustValidPin)
+
+	var loginrequest1 LoginRequestNew
+
+	// Required dan ini harus format username, karena sudah diset di atas
+	//dan ini merupakan custom tag
+	loginrequest1.Username = "DARTHSIDIOUS"
+	loginrequest1.Password = ""
+	loginrequest1.Pin = "66666"
+
+	err := validkah6data.Struct(loginrequest1)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+type LoginRequestNew2 struct {
+	Username string `validate:"custom1,email"`
+	Password string `validate:"custom1,min=5"`
+	Pin      string `validate:"required,Pincheck=6"`
+}
+
+func TestValidasiCustomParameter2(t *testing.T) {
+
+	validkah6data := validator.New()
+	validkah6data.RegisterAlias("custom1", "required,max=255")
+	validkah6data.RegisterValidation("Pincheck", MustValidPin)
+
+	var loginrequest1 LoginRequestNew2
+
+	// Required dan ini harus format username, karena sudah diset di atas
+	//dan ini merupakan custom tag
+	loginrequest1.Username = "987867727" //misal ini bisa nomor telepon juga atau email
+	loginrequest1.Password = ""
+	loginrequest1.Pin = "66666"
+
+	err := validkah6data.Struct(loginrequest1)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+type LoginRequestNew3 struct {
+	//perhatikan tag nya dalam kondisi OR atau |, dan tidak lagi terpisah
+	//jadi salah satu kondisi bisa memenuhi, contoh pada username
+	//boleh email, boleh numerical
+	Username string `validate:"required,email|numeric"`
+	Password string `validate:"required,min=5"`
+	Pin      string `validate:"required,numeric|max=6"`
+}
+
+func TestValidasiTagOrRule(t *testing.T) {
+
+	validkah6data := validator.New()
+
+	var loginrequest1 LoginRequestNew3
+
+	// Required dan ini harus format username, karena sudah diset di atas
+	loginrequest1.Username = "08132344233" //misal ini bisa nomor telepon juga atau email
+	loginrequest1.Password = "password"
+	loginrequest1.Pin = "77886633"
+
+	err := validkah6data.Struct(loginrequest1)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+func MustEqualsIgnoreCase(field validator.FieldLevel) bool {
+	rvalue, _, _, bool2 := field.GetStructFieldOK2()
+	if !bool2 {
+		panic("field not ok")
+	}
+
+	firstvalue := strings.ToUpper(field.Field().String())
+	secondvalue := strings.ToUpper(rvalue.String())
+
+	return firstvalue == secondvalue
+}
+
+type LoginRequestNew4 struct {
+	Username     string `validate:"required,field_equal_ignore_case=Email|field_equal_ignore_case=NomorTelepon"`
+	Email        string `validate:"required,email"`
+	NomorTelepon string `validate:"required,numeric"`
+	Nama         string `validate:"required"`
+}
+
+func TestValidasiCrossFieldCustom(t *testing.T) {
+
+	validkah6data := validator.New()
+	validkah6data.RegisterValidation("field_equal_ignore_case", MustEqualsIgnoreCase)
+
+	loginrequest1 := LoginRequestNew4{
+		Username:     "email@email.com",
+		Email:        "Email@email.com",
+		NomorTelepon: "081888222992",
+		Nama:         "contoh nama user",
+	}
+
+	err := validkah6data.Struct(loginrequest1)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+type RegisterReq struct {
+	Username     string
+	Email        string
+	NomorTelepon string
+	Nama         string
+}
+
+//kalau diamati di atas tanpa validasi tag seperti biasanya
+//alih - alih validasinya tertanam pada function "RegisterSuksesValidasi"
+
+func TestValidasiStructLevel(t *testing.T) {
+
+	validkah6data := validator.New()
+	//validasi diregistrasikan dengan RegisterStructValidation
+	validkah6data.RegisterStructValidation(RegisterSuksesValidasi, RegisterReq{})
+
+	RegReq := RegisterReq{
+		Username:     "email@mail.com",
+		Email:        "email@mail.com",
+		NomorTelepon: "0887772211",
+		Nama:         "contoh nama user",
+	}
+
+	err := validkah6data.Struct(RegReq)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+}
+
+func RegisterSuksesValidasi(level validator.StructLevel) {
+	Register := level.Current().Interface().(RegisterReq)
+	if Register.Username == Register.Email || Register.Username == Register.NomorTelepon {
+		//success
+	} else {
+		//tag nya di sini "Username", "Username", "Username"
+		level.ReportError(Register.Username, "Username", "Username", "Username", "")
+	}
+
 }
